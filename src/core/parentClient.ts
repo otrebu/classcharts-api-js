@@ -2,7 +2,7 @@ import type { ChangePasswordResponse, GetPupilsResponse } from "../types.ts";
 
 import { BaseClient } from "../core/baseClient.ts";
 import { API_BASE_PARENT, BASE_URL } from "../utils/consts.ts";
-import { parseCookies } from "../utils/utils.ts";
+import { getSetCookies, parseCookies } from "../utils/utils.ts";
 /**
  * Parent Client.
  * See {@link BaseClient} for all shared methods.
@@ -61,9 +61,10 @@ export class ParentClient extends BaseClient {
 			);
 		}
 
-		const cookies = String(response.headers.get("set-cookie"));
-		this.authCookies = cookies.split(";");
-		const sessionCookies = parseCookies(cookies);
+		const setCookies = getSetCookies(response.headers);
+		// Only send "name=value" pairs back, never attributes like Path/Expires.
+		this.authCookies = setCookies.map((cookie) => cookie.split(";")[0].trim());
+		const sessionCookies = parseCookies(this.authCookies.join(","));
 		const sessionID = JSON.parse(
 			String(sessionCookies.parent_session_credentials),
 		);
